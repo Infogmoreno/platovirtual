@@ -1,0 +1,527 @@
+<html>
+  <head>
+    <title>360° Image Browser</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-template-component@3.x.x/dist/aframe-template-component.min.js"></script>
+    <script src="https://unpkg.com/aframe-layout-component@4.x.x/dist/aframe-layout-component.min.js"></script>
+    <script src="https://unpkg.com/aframe-event-set-component@5.x.x/dist/aframe-event-set-component.min.js"></script>
+    <script src="https://unpkg.com/aframe-proxy-event-component/dist/aframe-proxy-event-component.min.js"></script>
+
+    <script>
+      AFRAME.registerComponent("material-values", {
+        multiple: true,
+        schema: {
+          materialName: { type: "string", default: "" },
+          color: { type: "color", default: "" },
+          map: { type: "string", default: "" },
+          metalness: { type: "number", default: -1, min: 0, max: 1 },
+          roughness: { type: "number", default: -1, min: 0, max: 1 },
+          opacity: { type: "number", default: 1, min: 0, max: 1 },
+        },
+
+        events: {
+          "model-loaded": function () {
+            this.update();
+          },
+        },
+
+        init() {
+          this.rendererSystem = this.el.sceneEl.systems.renderer;
+        },
+
+        update: function () {
+          const mesh = this.el.getObject3D("mesh");
+          if (!mesh) return;
+
+          const materialName = this.data.materialName;
+          const color = this.data.color;
+          const map = this.data.map;
+          const metalness = this.data.metalness;
+          const roughness = this.data.roughness;
+          const opacity = this.data.opacity;
+          mesh.traverse((node) => {
+            if (node.material && node.material.name === materialName) {
+              if (color !== "") {
+                node.material.color.set(color);
+                // The following line calls node.material.color.convertSRGBToLinear() when <a-scene renderer="colorManagement:true">
+                this.rendererSystem.applyColorCorrection(node.material.color);
+              } else {
+                this.data.color = "#" + node.material.color.getHexString();
+              }
+
+              if (metalness !== -1) {
+                node.material.metalness = metalness;
+              } else {
+                this.data.metalness = node.material.metalness;
+              }
+
+              if (roughness !== -1) {
+                node.material.roughness = roughness;
+              } else {
+                this.data.roughness = node.material.roughness;
+              }
+
+              if (map) {
+                const imageSrc = map;
+                const loader = new THREE.TextureLoader();
+                loader.load(
+                  imageSrc,
+                  function (texture) {
+                    if (node.material.map) {
+                      texture.encoding = node.material.map.encoding;
+                      texture.flipY = node.material.map.flipY;
+                      texture.offset.copy(node.material.map.offset);
+                      texture.repeat.copy(node.material.map.repeat);
+                      texture.wrapS = node.material.map.wrapS;
+                      texture.wrapT = node.material.map.wrapT;
+                      node.material.map.dispose();
+                    }
+                    node.material.map = texture;
+                    texture.needsUpdate = true;
+                    node.material.needsUpdate = true;
+                  },
+                  undefined,
+                  function () {
+                    console.error(`Error loading ${imageSrc}`);
+                  }
+                );
+              }
+              node.material.opacity = opacity;
+              node.material.transparent = opacity < 1;
+              node.material.needsUpdate = true;
+            }
+          });
+        },
+      });
+
+      /* global AFRAME */
+      AFRAME.registerComponent("play-on-click", {
+        init: function () {
+          this.onClick = this.onClick.bind(this);
+        },
+        play: function () {
+          window.addEventListener("click", this.onClick);
+        },
+        pause: function () {
+          window.removeEventListener("click", this.onClick);
+        },
+        onClick: function (evt) {
+          var videoEl = this.el.getAttribute("material").src;
+          if (!videoEl) {
+            return;
+          }
+          this.el.object3D.visible = true;
+          videoEl.play();
+        },
+      });
+    </script>
+  </head>
+  <body>
+    <a-scene
+      renderer="antialias: true;
+                   colorManagement: true;
+                   sortObjects: true;
+                   physicallyCorrectLights: true;
+                   maxCanvasWidth: 1920;
+                   maxCanvasHeight: 1920;
+                   toneMapping: linear"
+      shadow="enabled: true; type: pcfsoft"
+      sound="src: #musicafondo; autoplay: false; volume: 0.3; on: fusing"
+    >
+      <a-assets>
+        <audio
+          id="click-sound"
+          src="https://cdn.aframe.io/360-image-gallery-boilerplate/audio/click.ogg"
+        ></audio>
+        <audio
+          id="musicafondo"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/Tuesday%20Night%20Radio%20Edit_vers_cort.mp3?v=1708369818926"
+          preload="auto"
+        ></audio>
+        <video
+          id="yopresent"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/MiPres_realidad_aum_vers_corta.webm?v=1711223130276"
+          loop="false"
+          crossorigin="anonymous"
+          muted
+        ></video>
+        <video
+          id="demovr"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/Dem_RealVirt_2023_480.mp4?v=1708077325089"
+          muted
+          loop="true"
+          crossorigin="anonymous"
+        ></video>
+        <video
+          id="demoar"
+          src="https://cdn.glitch.me/e92a5644-796f-4334-87df-9d18b6198786/DemoRealidAument_2023.mp4?v=1708361291679"
+          muted
+          loop="true"
+          crossorigin="anonymous"
+        ></video>
+        <a-asset-item
+          id="setasmaq"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/Setasok.glb?v=1708418849526"
+          crossorigin="anonymous"
+        >
+        </a-asset-item>
+        <a-asset-item
+          id="cotassetas"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/Medidas_Cotas.glb?v=1708079699550"
+          crossorigin="anonymous"
+        >
+        </a-asset-item>
+        <a-asset-item
+          id="leyendassetas"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/Leyendas.glb?v=1708079699193"
+          crossorigin="anonymous"
+        >
+        </a-asset-item>
+        <img
+          id="btn_siguiente"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/boton_siguiente.png?v=1708359851634"
+          crossorigin="anonymous"
+        />
+        <img
+          id="btn_anterior"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/boton_anterior.png?v=1708359851320"
+          crossorigin="anonymous"
+        />
+        <img
+          id="vr_txt"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/RV_txt.png?v=1708363716268"
+          crossorigin="anonymous"
+        />
+        <img
+          id="ar_txt"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/RA_txt.png?v=1708363715965"
+          crossorigin="anonymous"
+        />
+        <img
+          id="btn_amarillo"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/btn_amarillolgris.png?v=1708372136354"
+          crossorigin="anonymous"
+        />
+        <img
+          id="btn_azulgris"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/btn_azulgris.png?v=1708372136725"
+          crossorigin="anonymous"
+        />
+        <img
+          id="btn_lila"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/btn_lila.png?v=1708372137025"
+          crossorigin="anonymous"
+        />
+        <img
+          id="btn_naranja"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/btn_rosa.png?v=1708372363005"
+          crossorigin="anonymous"
+        />
+        <img
+          id="btn_verde"
+          src="https://cdn.glitch.global/e92a5644-796f-4334-87df-9d18b6198786/btn_verde.png?v=1708372137648"
+          crossorigin="anonymous"
+        />
+
+        <!-- Images. -->
+        <img
+          id="platovirtual"
+          src="https://cdn.glitch.me/e92a5644-796f-4334-87df-9d18b6198786/Plat%C3%B3Virtual_equirectangular.png?v=1708074606671"
+          crossorigin="anonymous"
+        />
+
+        <script id="link" type="text/html">
+          <a-entity class="link"
+            geometry="primitive: plane; height: 0.65; width: 0.65"
+            material="shader: flat; opacity: 0.2; src: ${min}"
+            sound="on: click; src: #click-sound"
+            event-set__mouseenter="scale: 1.2 1.2 1; material.opacity: 0.95"
+            event-set__mouseleave="scale: 1 1 1; material.opacity: 0.2"
+            event-set__click="_target: #imagentorno; _delay: 400; material.src: ${src}"></a-entity
+            proxy-event="event: mouseenter; to: #imagentorno; as: fade"
+            >
+        </script>
+      </a-assets>
+      <!--presentador-->
+      <a-video
+        id="presentador"
+        class="link"
+        width="2"
+        height="4"
+        material="shader: flat; src: #yopresent;"
+        position="-3 0 0"
+        rotation="-180 90 -180"
+        play-on-click
+      >
+      </a-video>
+      <!--pantalla_video TV-->
+      <a-video
+        id="pantallatv"
+        class="link"
+        width="4.5"
+        height="2.5"
+        material="shader: flat; src: #demovr;"
+        position="-4.9 -0.05 -5"
+        rotation="180 -145 180"
+        play-on-click
+      >
+      </a-video>
+      <!--maqueta-->
+      <a-entity
+        id="grupo_setas"
+        position="-0.5 1.25 0.5"
+        animation="property: rotation; from: 0 0 0; to: 0 -360 0; dur: 240000; dir: normal; loop: true; easing: linear"
+      >
+        <a-entity
+          id="maquesetas"
+          gltf-model="#setasmaq"
+          position="0 0 0"
+          rotation="0 135 0"
+          scale="0.7 0.7 0.7"
+          shadow="castshadow: true; receive: true"
+          material-values__matmetropol="materialName:mat_metropol;color:#658795;metalness:0;roughness:1;opacity:1"
+        >
+        </a-entity>
+        <a-entity
+          id="Setascotas"
+          gltf-model="#cotassetas"
+          position="0 0 0"
+          rotation="0 135 0"
+          scale="0.7 0.7 0.7"
+        >
+        </a-entity>
+        <a-entity
+          id="Setasleyendad"
+          gltf-model="#leyendassetas"
+          position="0 0 0"
+          rotation="0 135 0"
+          scale="0.7 0.7 0.7"
+        >
+        </a-entity>
+      </a-entity>
+
+      <!-- botones selector VR AR -->
+      <a-image
+        id="boton_ar"
+        class="clickable"
+        position="-1.68 1.65 -2"
+        rotation="0 25 0"
+        scale="0.12 0.12 0.12"
+        material="shader: flat; opacity: 0.55; src: #btn_siguiente"
+        event-set__mouseenter="scale: 0.13 0.13 0.13; material.opacity: 0.95;"
+        event-set__mouseleave="scale: 0.12 0.12 0.12; material.opacity: 0.55"
+        event-set__tarpanttv="_event: mouseenter; _target: #pantallatv; material.src: #demoar"
+        event-set__opactxt_in="_event: mouseenter; _target: #ra_txt; material.opacity: 0.9"
+        event-set__opactxt_out="_event: mouseleave; _target: #ra_txt; material.opacity: 0.3"
+        
+      ></a-image>
+      <a-image
+        id="ra_txt"
+        position="-1.68 1.77 -2"
+        rotation="0 25 0"
+        scale="0.08 0.05 0"
+        material="shader: flat; opacity: 0.55; src: #ar_txt; opacity: 0.3"
+        event-set__mouseenter="scale: 0.13 0.13 0.13; material.opacity: 0.95;"
+        event-set__mouseleave="scale: 0.12 0.12 0.12; material.opacity: 0.55"
+        event-set__tarpanttv="_event: mouseenter; _target: #pantallatv; material.src: #demoar"
+      ></a-image>
+      <a-image
+        id="rv_txt"
+        position="-1.9 1.77 -2"
+        rotation="0 20 0"
+        scale="0.08 0.05 0"
+        material="shader: flat; opacity: 0.55; src: #vr_txt; opacity: 0.3"
+        event-set__mouseenter="scale: 0.13 0.13 0.13; material.opacity: 0.95;"
+        event-set__mouseleave="scale: 0.12 0.12 0.12; material.opacity: 0.55"
+        event-set__tarpanttv="_event: mouseenter; _target: #pantallatv; material.src: #demoar"
+      ></a-image>
+      <a-image
+        id="boton_vr"
+        src="#btn_anterior"
+        class="clickable"
+        position="-1.9 1.65 -2"
+        rotation="0 65 0"
+        scale="0.12 0.12 0.12"
+        material="shader: flat; opacity: 0.55"
+        event-set__mouseenter="scale: 0.13 0.13 0.13; material.opacity: 0.95"
+        event-set__mouseleave="scale: 0.12 0.12 0.12; material.opacity: 0.55"
+        event-set__tarpanttv="_event: mouseenter; _target: #pantallatv; material.src: #demovr"
+        event-set__opactxt_in="_event: mouseenter; _target: #rv_txt; material.opacity: 0.9"
+        event-set__opactxt_out="_event: mouseleave; _target: #rv_txt; material.opacity: 0.3"
+        
+      ></a-image>
+
+      <!-- botones selector colores Setas-->
+
+      <a-entity id="grupo_botones" position="-0.2 0 0" rotation="0 20 0">
+        <a-image
+          id="btn_amar"
+          class="clickable"
+          position="-0.79269 1.45 0.80506"
+          rotation="0 120 0"
+          scale="0.06 0.06 0.06"
+          material="shader: flat; opacity: 1; src: #btn_amarillo"
+          event-set__mouseenter="scale: 0.07 0.07 0.07; material.opacity: 0.8;"
+          event-set__mouseleave="scale: 0.06 0.06 0.06; material.opacity: 1"
+        ></a-image>
+        <a-image
+          id="btn_azul"
+          class="clickable"
+          position="-0.79269 1.45 0.69"
+          rotation="0 120 0"
+          scale="0.06 0.06 0.06"
+          material="shader: flat; opacity: 1; src: #btn_azulgris"
+          event-set__mouseenter="scale: 0.07 0.07 0.07; material.opacity: 0.8;"
+          event-set__mouseleave="scale: 0.06 0.06 0.06; material.opacity: 1"
+        ></a-image>
+        <a-image
+          id="btn_lil"
+          class="clickable"
+          position="-0.79269 1.45 0.59"
+          rotation="0 120 0"
+          scale="0.06 0.06 0.06"
+          material="shader: flat; opacity: 1; src: #btn_lila"
+          event-set__mouseenter="scale: 0.07 0.07 0.07; material.opacity: 0.8;"
+          event-set__mouseleave="scale: 0.06 0.06 0.06; material.opacity: 1"
+        ></a-image>
+        <a-image
+          id="btn_naran"
+          class="clickable"
+          position="-0.79269 1.45 0.49"
+          rotation="0 120 0"
+          scale="0.06 0.06 0.06"
+          material="shader: flat; opacity: 1; src: #btn_naranja"
+          event-set__mouseenter="scale: 0.07 0.07 0.07; material.opacity: 0.8;"
+          event-set__mouseleave="scale: 0.06 0.06 0.06; material.opacity: 1"
+        ></a-image>
+        <a-image
+          id="btn_verd"
+          class="clickable"
+          position="-0.79269 1.45 0.39"
+          rotation="0 120 0"
+          scale="0.06 0.06 0.06"
+          material="shader: flat; opacity: 1; src: #btn_verde"
+          event-set__mouseenter="scale: 0.07 0.07 0.07; material.opacity: 0.8;"
+          event-set__mouseleave="scale: 0.06 0.06 0.06; material.opacity: 1"
+        ></a-image>
+      </a-entity>
+
+      <!-- 360-degree image. -->
+      <a-sky
+        id="imagentorno"
+        radius="20"
+        src="#platovirtual"
+        animation__fade="property: components.material.material.color; type: color; from: #FFF; to: #000; dur: 400; startEvents: fade"
+        animation__fadeback="property: components.material.material.color; type: color; from: #000; to: #FFF; dur: 400; startEvents: animationcomplete__fade"
+      >
+      </a-sky>
+
+      <!-- Camera + Cursor. -->
+      <a-camera>
+        <a-entity
+          id="cursor"
+          cursor="fuse: true; fuseTimeout: 10; rayOrigin: entity"
+          geometry="primitive: ring; radiusInner: 0.005; radiusOuter: 0.0065"
+          material="shader: flat; color: #936c01; opacity: 0.5"
+          position="0 0 -0.8"
+          raycaster="objects:.clickable"
+        ></a-entity>
+      </a-camera>
+      <a-entity
+        id="lightdirectional"
+        light="type: directional; intensity: 5; castshadow: true"
+        position="5 5 -6"
+        rotation="0 0 0"
+        target="#directionaltarget"
+      >
+        <a-entity id="directionaltarget" position="1 0 -2"></a-entity>
+      </a-entity>
+
+      <a-entity
+        id="lightambient"
+        light="type: ambient; intensity: 0.3; color: #d4cee3"
+        position="0 0 0"
+        rotation="0 0 0"
+      >
+      </a-entity>
+    </a-scene>
+    <script>
+      const btn_amar = document.querySelector("#btn_amar");
+      const btn_azul = document.querySelector("#btn_azul");
+      const btn_lil = document.querySelector("#btn_lil");
+      const btn_naran = document.querySelector("#btn_naran");
+      const btn_verd = document.querySelector("#btn_verd");
+
+      const btn_ar = document.querySelector("#boton_ar");
+      const btn_vr = document.querySelector("#boton_vr");
+
+      const maqSetas = document.querySelector("#maquesetas");
+      const vid_present = document.querySelector("#yopresent");
+
+      btn_amar.addEventListener("mouseenter", function () {
+        maqSetas.setAttribute("material-values__matmetropol", {
+          materialName: "mat_metropol",
+          color: "#B5A78C",
+          map: "",
+          roughness: 1,
+          metalness: 0,
+          opacity: 1,
+        });
+      });
+
+      btn_azul.addEventListener("mouseenter", function () {
+        maqSetas.setAttribute("material-values__matmetropol", {
+          materialName: "mat_metropol",
+          color: "#6f9ad3",
+          map: "",
+          roughness: 1,
+          metalness: 0,
+          opacity: 1,
+        });
+      });
+
+      btn_lil.addEventListener("mouseenter", function () {
+        maqSetas.setAttribute("material-values__matmetropol", {
+          materialName: "mat_metropol",
+          color: "#a092b4",
+          map: "",
+          roughness: 0.5,
+          metalness: 0.7,
+          opacity: 1,
+        });
+      });
+
+      btn_naran.addEventListener("mouseenter", function () {
+        maqSetas.setAttribute("material-values__matmetropol", {
+          materialName: "mat_metropol",
+          color: "#e4a64b",
+          map: "",
+          roughness: 1,
+          metalness: 0,
+          opacity: 1,
+        });
+      });
+
+      btn_verd.addEventListener("mouseenter", function () {
+        maqSetas.setAttribute("material-values__matmetropol", {
+          materialName: "mat_metropol",
+          color: "#7dbbb0",
+          map: "",
+          roughness: 0.6,
+          metalness: 0.8,
+          opacity: 1,
+        });
+      });
+
+      btn_ar.addEventListener("mouseenter", function () {
+        vid_present.muted = false;  
+        vid_present.volume = 0.6;
+      });
+      btn_vr.addEventListener("mouseenter", function () {
+        vid_present.muted = true;
+        vid_present.pause();
+        vid_present.currentTime = 0;
+      });
+    </script>
+  </body>
+</html>
